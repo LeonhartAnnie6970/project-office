@@ -57,7 +57,28 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { title, description } = await request.json()
+    const contentType = request.headers.get("content-type") || ""
+    let title: string
+    let description: string
+    let imageUserUrl: string | null = null
+
+    if (contentType.includes ("application/json")) {
+      // Old JSON format for backward compatibility
+      const body = await request.json()
+    title = body.title
+    description = body.description
+  } else if (contentType.includes("multipart/form-data")) {
+      // New FormData format with optional image
+      const formData = await
+      request.formData()
+      title = formData.get("title") as string
+      description = formData.get("description") as string
+      imageUserUrl = formData.get ("imageUserUrl") as string
+    } else {
+        return NextResponse.json({ error: "Invalid content type" }, { status: 400})
+      }
+    
+    // const { title, description } = await request.json()
 
     if (!title || !description) {
       return NextResponse.json({ error: "Title and description required" }, { status: 400 })
@@ -81,8 +102,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await query(
-      "INSERT INTO tickets (id_user, title, description, category, status) VALUES (?, ?, ?, ?, ?)",
-      [decoded.userId, title, description, category, "new"],
+      "INSERT INTO tickets (id_user, title, description, image_user_url, category, status) VALUES (?, ?, ?, ?, ?, ?)",
+      [decoded.userId, title, description, imageUserUrl, category, "new"],
     )
 
     return NextResponse.json({ message: "Ticket created", ticketId: (result as any).insertId }, { status: 201 })

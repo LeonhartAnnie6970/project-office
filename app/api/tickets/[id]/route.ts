@@ -53,7 +53,18 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   try {
-    const { status, category } = await request.json()
+    const contentType = request.headers.get("content-type") || ""
+    let bodyData: any
+
+    if (contentType.includes("application/json")) {
+      bodyData = await request.json()
+    } else {
+      return NextResponse.json({ error: "Invalid content type"}, { status: 400 })
+    }
+    
+    const { status, category, imageAdminUrl } = bodyData
+
+    // const { status, category } = await request.json()
 
     // Only admin can update status and category
     if (decoded.role !== "admin") {
@@ -70,6 +81,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (category) {
       updates.push("category = ?")
       values.push(category)
+    }
+    if (imageAdminUrl) {
+      updates.push("image_admin_url= ?")
+      updates.push("image_admin_uploaded_at = NOW()")
+      values.push(imageAdminUrl)
     }
 
     if (updates.length === 0) {

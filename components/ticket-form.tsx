@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { ImageUpload } from "./image-upload"
 
 interface TicketFormProps {
   onSuccess?: () => void
@@ -21,6 +22,8 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
   const [success, setSuccess] = useState("")
   const [predictedCategory, setPredictedCategory] = useState<string | null>(null)
   const [classifyingText, setClassifyingText] = useState(false)
+  const [imageUserUrl, setImageUserUrl] = useState<string | null>(null)
+  const [imageUserPreview, setImageUserPreview] = useState<string | null>(null)
 
   const handleDescriptionChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newDescription = e.target.value
@@ -51,6 +54,16 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
     }
   }
 
+  const handleImageUpload = (url: string, filename: string) => {
+    setImageUserUrl(url)
+    setImageUserPreview(url)
+  }
+
+  const handleRemoveImage = () => {
+    setImageUserUrl(null)
+    setImageUserPreview(null)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
@@ -60,13 +73,19 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
     try {
       const token = localStorage.getItem("token")
 
+      const formData = new FormData()
+      formData.append("title", title)
+      formData.append("description", description)
+      if (imageUserUrl) {
+        formData.append("imageUserUrl", imageUserUrl)
+      }
+
       const response = await fetch("/api/tickets", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description }),
+        body: formData,
       })
 
       const data = await response.json()
@@ -79,6 +98,8 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
       setSuccess("Tiket berhasil dibuat!")
       setTitle("")
       setDescription("")
+      setImageUserUrl(null)
+      setImageUserPreview(null)
       setPredictedCategory(null)
 
       if (onSuccess) {
@@ -109,6 +130,7 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -120,6 +142,7 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
               onChange={handleDescriptionChange}
               required
               rows={5}
+              disabled={isLoading}
             />
           </div>
 
@@ -130,6 +153,16 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
               {classifyingText && <span className="text-xs text-muted-foreground ml-2">Menganalisis...</span>}
             </div>
           )}
+
+          <ImageUpload
+            label="Bukti Laporan"
+            description="Tambahkan screenshot atau gambar sebagai bukti laporan Anda (opsional)"
+            uploadType="user_report"
+            onImageUpload={handleImageUpload}
+            onImageRemove={handleRemoveImage}
+            previewUrl={imageUserPreview}
+            isLoading={isLoading}
+          />
 
           <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? "Membuat..." : "Buat Tiket"}
