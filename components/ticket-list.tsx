@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ImageIcon } from "lucide-react"
+
 
 interface Ticket {
   id: number
@@ -12,6 +14,8 @@ interface Ticket {
   status: string
   created_at: string
   name: string
+  image_user_url?: string
+  image_admin_url?: string
 }
 
 interface TicketListProps {
@@ -92,6 +96,37 @@ export function TicketList({ refreshTrigger }: TicketListProps) {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-3">{ticket.description}</p>
+            
+            {/* Display user report image */}
+            {ticket.image_user_url && (
+              <div className="mb-3">
+                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                  <ImageIcon size={14} />
+                  Bukti Laporan:
+                </p>
+                <img
+                  src={ticket.image_user_url}
+                  alt="User report"
+                  className="max-w-full max-h-48 rounded border object-cover"
+                />
+              </div>
+            )}
+
+            {/* Display admin resolution image */}
+            {ticket.image_admin_url && (
+              <div className="mb-3">
+                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                  <ImageIcon size={14} />
+                  Bukti Penyelesaian Admin:
+                </p>
+                <img
+                  src={ticket.image_admin_url}
+                  alt="Admin resolution"
+                  className="max-w-full max-h-48 rounded border object-cover"
+                />
+              </div>
+            )}
+            
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               {ticket.category && <Badge variant="outline">{ticket.category}</Badge>}
               <span>{new Date(ticket.created_at).toLocaleDateString("id-ID")}</span>
@@ -102,3 +137,30 @@ export function TicketList({ refreshTrigger }: TicketListProps) {
     </div>
   )
 }
+
+
+//   return (
+//     <div className="space-y-4">
+//       {tickets.map((ticket) => (
+//         <Card key={ticket.id}>
+//           <CardHeader>
+//             <div className="flex items-start justify-between">
+//               <div>
+//                 <CardTitle className="text-lg">{ticket.title}</CardTitle>
+//                 <CardDescription>{ticket.name}</CardDescription>
+//               </div>
+//               <Badge className={getStatusColor(ticket.status)}>{ticket.status}</Badge>
+//             </div>
+//           </CardHeader>
+//           <CardContent>
+//             <p className="text-sm text-muted-foreground mb-3">{ticket.description}</p>
+//             <div className="flex items-center justify-between text-xs text-muted-foreground">
+//               {ticket.category && <Badge variant="outline">{ticket.category}</Badge>}
+//               <span>{new Date(ticket.created_at).toLocaleDateString("id-ID")}</span>
+//             </div>
+//           </CardContent>
+//         </Card>
+//       ))}
+//     </div>
+//   )
+// }

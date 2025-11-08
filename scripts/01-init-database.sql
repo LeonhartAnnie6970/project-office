@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS tickets (
   description TEXT NOT NULL,
   category VARCHAR(100),
   status ENUM('new', 'in_progress', 'resolved') DEFAULT 'new',
+  image_user_url VARCHAR(255) DEFAULT NULL,
+  image_admin_url VARCHAR(255) DEFAULT NULL,
+  image_admin_uploaded_at TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (id_user) REFERENCES users(id) ON DELETE CASCADE

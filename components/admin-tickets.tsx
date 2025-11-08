@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AdminTicketDetail } from "./admin-ticket-detail"
+import Image from "next/image"
+import { TicketImageModal } from "./ticket-image-modal"
 
 
 interface Ticket {
@@ -23,6 +25,12 @@ export function AdminTickets() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
   const [updatingStatus, setUpdatingStatus] = useState<Record<number, boolean>>({})
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string | null
+    title: string
+    userName?: string
+    type?: "user" | "admin"
+  } | null>(null)
 
   useEffect(() => {
     fetchTickets()
@@ -103,6 +111,13 @@ export function AdminTickets() {
           ))}
         </div>
       </CardContent>
+
+      {selectedImage && (
+        <TicketImageModal
+          image={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
     </Card>
   )
 }

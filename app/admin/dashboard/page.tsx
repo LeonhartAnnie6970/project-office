@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AdminStats } from "@/components/admin-stats"
 import { AdminTickets } from "@/components/admin-tickets"
+import { TicketImagesGalleryKelola } from "@/components/ticket-images-gallery-kelola"
 import { ThemeProvider } from "@/components/theme-provider"
 
 function AdminDashboardContent() {
@@ -51,6 +52,7 @@ function AdminDashboardContent() {
           <TabsList>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="tickets">Kelola Tiket</TabsTrigger>
+            <TabsTrigger value="images">Galeri Gambar</TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-4">
@@ -59,6 +61,10 @@ function AdminDashboardContent() {
 
           <TabsContent value="tickets" className="space-y-4">
             <AdminTickets />
+          </TabsContent>
+
+          <TabsContent value="images" className="space-y-4">
+            <TicketImagesGalleryKelola />
           </TabsContent>
         </Tabs>
       </div>
