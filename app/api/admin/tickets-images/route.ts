@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
         t.status,
         t.image_user_url,
         t.image_admin_url,
-        u.name
+        u.name,
+        t.description
       FROM tickets t
       JOIN users u ON t.id_user = u.id
       WHERE t.image_user_url IS NOT NULL 

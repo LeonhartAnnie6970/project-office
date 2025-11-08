@@ -12,6 +12,7 @@ interface TicketImage {
   image_user_url: string | null
   image_admin_url: string | null
   name: string
+  description: string
 }
 
 export function TicketImagesGalleryKelola() {
@@ -23,6 +24,7 @@ export function TicketImagesGalleryKelola() {
     title: string
     userName?: string
     type?: "user" | "admin"
+    description: string
   } | null>(null)
 
   useEffect(() => {
@@ -80,6 +82,7 @@ export function TicketImagesGalleryKelola() {
                       title: `${ticket.title} — Bukti User`,
                       userName: ticket.name,
                       type: "user",
+                      description: ticket.description
                     })
                   }
                   className="relative aspect-square rounded-lg overflow-hidden block"
@@ -104,6 +107,7 @@ export function TicketImagesGalleryKelola() {
                       title: `${ticket.title} — Bukti Admin`,
                       userName: ticket.name,
                       type: "admin",
+                      description: ticket.description
                     })
                   }
                   className="relative aspect-square rounded-lg overflow-hidden block"
@@ -130,6 +134,7 @@ export function TicketImagesGalleryKelola() {
             title: selectedImage.title,
             userName: selectedImage.userName,
             type: selectedImage.type,
+            description: selectedImage.description
           }}
           onClose={() => setSelectedImage(null)}
         />

@@ -52,7 +52,7 @@ function AdminDashboardContent() {
           <TabsList>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="tickets">Kelola Tiket</TabsTrigger>
-            <TabsTrigger value="images">Galeri Gambar</TabsTrigger>
+            {/* <TabsTrigger value="images">Galeri Gambar</TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-4">
@@ -63,9 +63,9 @@ function AdminDashboardContent() {
             <AdminTickets />
           </TabsContent>
 
-          <TabsContent value="images" className="space-y-4">
+          {/* <TabsContent value="images" className="space-y-4">
             <TicketImagesGalleryKelola />
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </div>
     </main>

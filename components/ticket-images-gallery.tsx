@@ -10,6 +10,7 @@ interface TicketWithImage {
   title: string
   image_user_url: string | null
   name: string
+  description: string 
 }
 
 export function TicketImagesGallery() {
@@ -20,6 +21,7 @@ export function TicketImagesGallery() {
     url: string | null
     title: string
     userName?: string
+    description: string
   } | null>(null)
 
   useEffect(() => {
@@ -75,6 +77,7 @@ export function TicketImagesGallery() {
                     url: ticket.image_user_url,
                     title: ticket.title,
                     userName: ticket.name,
+                    description: ticket.description,
                   })
                 }
                 className="relative aspect-square rounded-lg overflow-hidden block"
@@ -93,6 +96,7 @@ export function TicketImagesGallery() {
             title: selectedImage.title,
             userName: selectedImage.userName,
             type: "user",
+            description: selectedImage.description
           }}
           onClose={() => setSelectedImage(null)}
         />

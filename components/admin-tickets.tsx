@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AdminTicketDetail } from "./admin-ticket-detail"
 import Image from "next/image"
 import { TicketImageModal } from "./ticket-image-modal"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { Badge } from "./ui/badge"
 
 
 interface Ticket {
@@ -95,29 +97,45 @@ export function AdminTickets() {
   }
 
   return (
-    <Card>
+        <Card>
       <CardHeader>
         <CardTitle>Kelola Tiket</CardTitle>
-        <CardDescription>Update status, kategori, dan upload bukti resolved</CardDescription>
+        <CardDescription>Update status dan kategori tiket</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {tickets.map((ticket) => (
-            <AdminTicketDetail
-            key={ticket.id}
-            ticket={tickets}
-            onStatusUpdate={handleStatusUpdate}isUpdating={updatingStatus[ticket.id] || false}
-            />           
+            <div key={ticket.id} className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold">{ticket.title}</h3>
+                  <p className="text-sm text-muted-foreground">{ticket.name}</p>
+                </div>
+                <Badge variant="outline">{ticket.category || "Uncategorized"}</Badge>
+              </div>
+
+              <p className="text-sm text-muted-foreground">{ticket.description}</p>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Status:</span>
+                <Select value={ticket.status} onValueChange={(value) => handleStatusUpdate(ticket.id, value)}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                  </SelectContent>
+                </Select>
+                {updatingStatus[ticket.id] && <span className="text-xs text-muted-foreground">Updating...</span>}
+              </div>
+
+              <p className="text-xs text-muted-foreground">{new Date(ticket.created_at).toLocaleString("id-ID")}</p>
+            </div>
           ))}
         </div>
       </CardContent>
-
-      {selectedImage && (
-        <TicketImageModal
-          image={selectedImage}
-          onClose={() => setSelectedImage(null)}
-        />
-      )}
     </Card>
   )
 }

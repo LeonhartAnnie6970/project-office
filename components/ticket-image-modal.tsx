@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Image from "next/image"
 
 interface TicketImagePayload {
@@ -9,6 +9,7 @@ interface TicketImagePayload {
   title: string
   userName?: string
   type?: "user" | "admin"
+  description: string
 }
 
 interface TicketImageModalProps {
@@ -18,12 +19,14 @@ interface TicketImageModalProps {
   imageUrl?: string | null
   imageTitle?: string
   userName?: string
+  description?: string
   type?: "user" | "admin"
   onClose: () => void
 }
 
 export function TicketImageModal({
   image,
+  description,
   isOpen,
   imageUrl,
   imageTitle,
@@ -37,7 +40,8 @@ export function TicketImageModal({
   const uploader = image?.userName ?? userName
   const imageType = image?.type ?? type
   const open = isOpen ?? Boolean(image)
-
+  const descriptionText = description ?? image?.description ?? ""
+  
   if (!url) return null
 
   return (
@@ -45,6 +49,7 @@ export function TicketImageModal({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{descriptionText}</DialogDescription>
         </DialogHeader>
 
         <div className="relative w-full aspect-video">
