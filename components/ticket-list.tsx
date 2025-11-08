@@ -16,6 +16,7 @@ interface Ticket {
   name: string
   image_user_url?: string
   image_admin_url?: string
+  admin_notes?: string
 }
 
 interface TicketListProps {
@@ -95,7 +96,7 @@ export function TicketList({ refreshTrigger }: TicketListProps) {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-3">{ticket.description}</p>
+            <p className="text-sm text-muted-foreground mb-3"> User Notes : {ticket.description}</p>
             
             {/* Display user report image */}
             {ticket.image_user_url && (
@@ -126,7 +127,8 @@ export function TicketList({ refreshTrigger }: TicketListProps) {
                 />
               </div>
             )}
-            
+            <p className="text-sm text-muted-foreground mb-3"> Admin Notes : {ticket.admin_notes}</p>
+
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               {ticket.category && <Badge variant="outline">{ticket.category}</Badge>}
               <span>{new Date(ticket.created_at).toLocaleDateString("id-ID")}</span>

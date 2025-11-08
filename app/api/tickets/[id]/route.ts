@@ -62,11 +62,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Invalid content type"}, { status: 400 })
     }
     
-    const { status, category, imageAdminUrl } = bodyData
+    const { status, category, imageAdminUrl, adminNotes } = bodyData
 
-    // const { status, category } = await request.json()
-
-    // Only admin can update status and category
+    // Only admin can update status, category, image, and notes
     if (decoded.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
@@ -74,18 +72,29 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const updates = []
     const values = []
 
-    if (status) {
+    if (status !== undefined) {
       updates.push("status = ?")
       values.push(status)
     }
-    if (category) {
+    if (category !== undefined) {
       updates.push("category = ?")
       values.push(category)
     }
-    if (imageAdminUrl) {
-      updates.push("image_admin_url= ?")
-      updates.push("image_admin_uploaded_at = NOW()")
-      values.push(imageAdminUrl)
+    if (imageAdminUrl !== undefined) {
+      if (imageAdminUrl === null) {
+        // Delete image
+        updates.push("image_admin_url = NULL")
+        updates.push("image_admin_uploaded_at = NULL")
+      } else {
+        // Upload new image
+        updates.push("image_admin_url = ?")
+        updates.push("image_admin_uploaded_at = NOW()")
+        values.push(imageAdminUrl)
+      }
+    }
+    if (adminNotes !== undefined) {
+      updates.push("admin_notes = ?")
+      values.push(adminNotes)
     }
 
     if (updates.length === 0) {
