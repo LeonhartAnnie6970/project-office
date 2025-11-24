@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Upload, X, ImageIcon, Calendar, Pencil, Trash2, AlertCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Upload, X, ImageIcon, Calendar, Pencil, Trash2, AlertCircle, Search, Filter } from "lucide-react"
 import Image from "next/image"
 
 interface Ticket {
@@ -52,23 +53,25 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
   const [activeTab, setActiveTab] = useState("new")
   const ticketRefs = useRef<{ [key: number]: HTMLDivElement | null }>({})
 
+  // Search & Filter States
+  const [searchQuery, setSearchQuery] = useState("")
+  const [dateFilter, setDateFilter] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState("all")
+
   useEffect(() => {
     fetchTickets()
   }, [])
 
   useEffect(() => {
     if (selectedTicketId && tickets.length > 0) {
-      // Find the ticket and switch to its tab
       const ticket = tickets.find(t => t.id === selectedTicketId)
       if (ticket) {
         setActiveTab(ticket.status)
         
-        // Scroll to ticket after tab switch
         setTimeout(() => {
           const element = ticketRefs.current[selectedTicketId]
           if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            // Add highlight effect
             element.classList.add('ring-2', 'ring-primary', 'ring-offset-2')
             setTimeout(() => {
               element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2')
@@ -104,10 +107,57 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
     }
   }
 
-  // Group tickets by status
-  const newTickets = tickets.filter(t => t.status === "new")
-  const inProgressTickets = tickets.filter(t => t.status === "in_progress")
-  const resolvedTickets = tickets.filter(t => t.status === "resolved")
+  // Filter tickets based on search query, date, and category
+  const filteredTickets = useMemo(() => {
+    let filtered = [...tickets]
+
+    // Search filter (keyword in title, description, name, or divisi)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(ticket => 
+        ticket.title.toLowerCase().includes(query) ||
+        ticket.description.toLowerCase().includes(query) ||
+        ticket.name.toLowerCase().includes(query) ||
+        ticket.divisi?.toLowerCase().includes(query) ||
+        ticket.category?.toLowerCase().includes(query) ||
+        ticket.admin_notes?.toLowerCase().includes(query)
+      )
+    }
+
+    // Date filter
+    if (dateFilter) {
+      filtered = filtered.filter(ticket => {
+        const ticketDate = new Date(ticket.created_at).toISOString().split('T')[0]
+        return ticketDate === dateFilter
+      })
+    }
+
+    // Category filter
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(ticket => ticket.category === categoryFilter)
+    }
+
+    return filtered
+  }, [tickets, searchQuery, dateFilter, categoryFilter])
+
+  // Group filtered tickets by status
+  const newTickets = filteredTickets.filter(t => t.status === "new")
+  const inProgressTickets = filteredTickets.filter(t => t.status === "in_progress")
+  const resolvedTickets = filteredTickets.filter(t => t.status === "resolved")
+
+  // Get unique categories for filter
+  const categories = useMemo(() => {
+    const cats = new Set(tickets.map(t => t.category).filter(Boolean))
+    return Array.from(cats)
+  }, [tickets])
+
+  const handleClearFilters = () => {
+    setSearchQuery("")
+    setDateFilter("")
+    setCategoryFilter("all")
+  }
+
+  const hasActiveFilters = searchQuery || dateFilter || categoryFilter !== "all"
 
   const handleStatusUpdate = async (ticketId: number, newStatus: string) => {
     setUpdatingStatus((prev) => ({ ...prev, [ticketId]: true }))
@@ -262,7 +312,6 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
     }
   }
 
-  // Render ticket card component
   const renderTicketCard = (ticket: Ticket) => (
     <div 
       key={ticket.id} 
@@ -287,7 +336,6 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
         <p className="text-sm">{ticket.description}</p>
       </div>
 
-      {/* Admin Notes Section */}
       <div className="bg-muted/50 rounded-lg p-3 space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-muted-foreground">Catatan Admin:</p>
@@ -307,9 +355,7 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
         )}
       </div>
 
-      {/* Images Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* User Image */}
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Gambar dari User:</p>
           {ticket.image_user_url ? (
@@ -334,7 +380,6 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
           )}
         </div>
 
-        {/* Admin Image */}
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Gambar Resolusi Admin:</p>
           {ticket.image_admin_url ? (
@@ -474,6 +519,67 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
 
   return (
     <>
+      {/* Search & Filter Section */}
+      <Card className="mb-4">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari berdasarkan judul, deskripsi, nama user, divisi, kategori, atau catatan..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Date Filter */}
+              <div className="w-48">
+                <Input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  placeholder="Filter tanggal"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Semua Kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kategori</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Clear Filters Button */}
+              {hasActiveFilters && (
+                <Button variant="ghost" onClick={handleClearFilters}>
+                  <X className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
+              )}
+            </div>
+
+            {/* Filter Info */}
+            {hasActiveFilters && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Filter className="w-4 h-4" />
+                <span>
+                  Menampilkan {filteredTickets.length} dari {tickets.length} tiket
+                </span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="new" className="relative">
@@ -502,7 +608,6 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
           </TabsTrigger>
         </TabsList>
 
-        {/* New Tickets */}
         <TabsContent value="new" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
@@ -517,7 +622,7 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
             <CardContent>
               {newTickets.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Tidak ada tiket baru
+                  {hasActiveFilters ? "Tidak ada tiket yang sesuai dengan filter" : "Tidak ada tiket baru"}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -528,7 +633,6 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
           </Card>
         </TabsContent>
 
-        {/* In Progress Tickets */}
         <TabsContent value="in_progress" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
@@ -543,7 +647,7 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
             <CardContent>
               {inProgressTickets.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Tidak ada tiket yang sedang diproses
+                  {hasActiveFilters ? "Tidak ada tiket yang sesuai dengan filter" : "Tidak ada tiket yang sedang diproses"}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -554,7 +658,6 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
           </Card>
         </TabsContent>
 
-        {/* Resolved Tickets */}
         <TabsContent value="resolved" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
@@ -569,7 +672,7 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
             <CardContent>
               {resolvedTickets.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Belum ada tiket yang terselesaikan
+                  {hasActiveFilters ? "Tidak ada tiket yang sesuai dengan filter" : "Belum ada tiket yang terselesaikan"}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -581,7 +684,6 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Image Modal */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -617,7 +719,6 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Notes Editor Modal */}
       <Dialog open={!!editingNotes} onOpenChange={() => setEditingNotes(null)}>
         <DialogContent>
           <DialogHeader>
