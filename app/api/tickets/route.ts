@@ -240,19 +240,55 @@ export async function POST(request: NextRequest) {
       const userInfo = await query("SELECT name, divisi FROM users WHERE id = ?", [decoded.userId])
       const user = (userInfo as any)[0]
 
-      // Create notification untuk setiap admin dan send email
+      // Create notification untuk setiap admin and send email only once
       for (const admin of admins as any[]) {
-        // Insert notification ke database
-        await query(
-          "INSERT INTO notifications (id_admin, id_ticket, id_user, title, message, is_read) VALUES (?, ?, ?, ?, ?, ?)",
-          [admin.id, ticketId, decoded.userId, title, `Tiket baru dari ${user.name}`, false],
-        )
+        try {
+          // Check if a notification already exists for this admin + ticket
+          const existing = await query(
+            "SELECT id, email_sent FROM notifications WHERE id_admin = ? AND id_ticket = ? LIMIT 1",
+            [admin.id, ticketId],
+          )
 
-        // Send email notification
-        await sendNotificationEmail(admin.email, admin.name, title, user.name, user.divisi, ticketId)
+          let notificationId: number | null = null
+          const existingRow = (existing as any[])[0]
+
+          if (existingRow) {
+            notificationId = existingRow.id
+            // If email already sent for this notification, skip
+            if (existingRow.email_sent) {
+              continue
+            }
+            // Otherwise update message/title/is_read in case we want to refresh
+            await query(
+              "UPDATE notifications SET id_user = ?, title = ?, message = ?, is_read = ? WHERE id = ?",
+              [decoded.userId, title, `Tiket baru dari ${user.name}`, false, notificationId],
+            )
+          } else {
+            // Insert notification with email_sent default 0
+            const insertRes = await query(
+              "INSERT INTO notifications (id_admin, id_ticket, id_user, title, message, is_read, email_sent) VALUES (?, ?, ?, ?, ?, ?, ?)",
+              [admin.id, ticketId, decoded.userId, title, `Tiket baru dari ${user.name}`, false, 0],
+            )
+            notificationId = (insertRes as any).insertId
+          }
+
+          // Send email notification only if not already sent
+          try {
+            await sendNotificationEmail(admin.email, admin.name, title, user.name, user.divisi, ticketId)
+            // Mark notification as email_sent = 1
+            if (notificationId) {
+              await query("UPDATE notifications SET email_sent = 1 WHERE id = ?", [notificationId])
+            }
+          } catch (emailErr) {
+            console.error("[v0] Error sending notification email to", admin.email, emailErr)
+            // Do not throw — notification row remains with email_sent = 0
+          }
+        } catch (e) {
+          console.error("[v0] Notification handling error for admin", admin, e)
+        }
       }
 
-      console.log("[v0] Notifications created and emails sent for ticket", ticketId)
+      console.log("[v0] Notifications processed for ticket", ticketId)
     } catch (notificationError) {
       console.error("[v0] Error creating notifications:", notificationError)
       // Continue even if notification fails

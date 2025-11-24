@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -27,7 +27,11 @@ interface Ticket {
   divisi?: string | null
 }
 
-export function AdminTickets() {
+interface AdminTicketsProps {
+  selectedTicketId?: number | null
+}
+
+export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
@@ -45,10 +49,35 @@ export function AdminTickets() {
     notes: string
   } | null>(null)
   const [savingNotes, setSavingNotes] = useState(false)
+  const [activeTab, setActiveTab] = useState("new")
+  const ticketRefs = useRef<{ [key: number]: HTMLDivElement | null }>({})
 
   useEffect(() => {
     fetchTickets()
   }, [])
+
+  useEffect(() => {
+    if (selectedTicketId && tickets.length > 0) {
+      // Find the ticket and switch to its tab
+      const ticket = tickets.find(t => t.id === selectedTicketId)
+      if (ticket) {
+        setActiveTab(ticket.status)
+        
+        // Scroll to ticket after tab switch
+        setTimeout(() => {
+          const element = ticketRefs.current[selectedTicketId]
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            // Add highlight effect
+            element.classList.add('ring-2', 'ring-primary', 'ring-offset-2')
+            setTimeout(() => {
+              element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2')
+            }, 3000)
+          }
+        }, 300)
+      }
+    }
+  }, [selectedTicketId, tickets])
 
   const fetchTickets = async () => {
     try {
@@ -111,7 +140,6 @@ export function AdminTickets() {
     try {
       const token = localStorage.getItem("token")
 
-      // Upload file
       const formData = new FormData()
       formData.append("file", file)
       formData.append("type", "admin_resolution")
@@ -130,7 +158,6 @@ export function AdminTickets() {
 
       const uploadData = await uploadResponse.json()
 
-      // Update ticket with image URL
       const updateResponse = await fetch(`/api/tickets/${ticketId}`, {
         method: "PATCH",
         headers: {
@@ -237,7 +264,11 @@ export function AdminTickets() {
 
   // Render ticket card component
   const renderTicketCard = (ticket: Ticket) => (
-    <div key={ticket.id} className="border rounded-lg p-4 space-y-3 bg-card">
+    <div 
+      key={ticket.id} 
+      ref={(el) => { ticketRefs.current[ticket.id] = el }}
+      className="border rounded-lg p-4 space-y-3 bg-card transition-all duration-300"
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <h3 className="font-semibold">{ticket.title}</h3>
@@ -443,7 +474,7 @@ export function AdminTickets() {
 
   return (
     <>
-      <Tabs defaultValue="new" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="new" className="relative">
             New Tickets
