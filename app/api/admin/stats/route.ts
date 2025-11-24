@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // Recent tickets
     const recentTickets = await query(
-      `SELECT t.id, t.title, t.status, t.category, t.created_at, u.name 
+      `SELECT t.id, t.title, t.status, t.category, t.created_at, u.name, u.divisi 
        FROM tickets t 
        JOIN users u ON t.id_user = u.id 
        ORDER BY t.created_at DESC 

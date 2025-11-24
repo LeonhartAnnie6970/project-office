@@ -23,6 +23,7 @@ interface Ticket {
   status: string
   created_at: string
   name: string
+  divisi?: string
 }
 
 export function AdminTicketDetail({ ticket, onStatusUpdate, isUpdating = false }: AdminTicketDetailProps) {
@@ -107,7 +108,7 @@ export function AdminTicketDetail({ ticket, onStatusUpdate, isUpdating = false }
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold">{ticket.title}</h3>
-                  <p className="text-sm text-muted-foreground">{ticket.name}</p>
+                  <p className="text-sm text-muted-foreground">{ticket.name}</p>  
                 </div>
                 <Badge variant="outline">{ticket.category || "Uncategorized"}</Badge>
               </div>

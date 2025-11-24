@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ThemeProvider } from "@/components/theme-provider"
+import { DIVISIONS } from "@/lib/divisions"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 function RegisterContent() {
   const router = useRouter()
@@ -16,6 +18,7 @@ function RegisterContent() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [divisi, setDivisi] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
@@ -28,13 +31,18 @@ function RegisterContent() {
       return
     }
 
+    if (!divisi) {
+      setError("Please select a division")
+      return
+    }
+
     setIsLoading(true)
 
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, divisi }),
       })
 
       const data = await response.json()
@@ -86,6 +94,21 @@ function RegisterContent() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Divisi</label>
+              <Select value={divisi} onValueChange={setDivisi}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih divisi Anda" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DIVISIONS.map((div) => (
+                    <SelectItem key={div} value={div}>
+                      {div}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Password</label>

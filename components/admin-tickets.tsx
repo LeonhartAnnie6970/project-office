@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Upload, X, ImageIcon, Calendar, Pencil, Trash2 } from "lucide-react"
 import Image from "next/image"
+// import { AdminTicketsByStatus } from "./admin-tickets-by-status"
 
 interface Ticket {
   id: number
@@ -23,6 +24,7 @@ interface Ticket {
   image_admin_url?: string
   image_admin_uploaded_at?: string
   admin_notes?: string
+  divisi?: string | null
 }
 
 export function AdminTickets() {
@@ -254,7 +256,12 @@ export function AdminTickets() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-semibold">{ticket.title}</h3>
-                    <p className="text-sm text-muted-foreground">{ticket.name}</p>
+                    <p className="text-sm text-muted-foreground">{ticket.name}
+                      {ticket.divisi && (
+                  <i className="text-xs"> Divisi : {ticket.divisi}
+                  </i>
+                )}
+                    </p>
                   </div>
                   <Badge variant="outline">{ticket.category || "Uncategorized"}</Badge>
                 </div>

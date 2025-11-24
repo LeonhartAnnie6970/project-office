@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { query } from "@/lib/db"
 import { hashPassword, generateToken } from "@/lib/auth"
+import { isValidDivision } from "@/lib/divisions"
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json()
+    const { name, email, password, divisi } = await request.json()
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !divisi) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -18,10 +19,11 @@ export async function POST(request: NextRequest) {
 
     // Hash password and create user
     const hashedPassword = await hashPassword(password)
-    const result = await query("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)", [
+    const result = await query("INSERT INTO users (name, email, password, divisi, role) VALUES (?, ?, ?, ?, ?)", [
       name,
       email,
       hashedPassword,
+      divisi,
       "user",
     ])
 

@@ -170,13 +170,22 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { TicketImagesGallery } from "@/components/ticket-images-gallery"
+import { Badge } from "./ui/badge"
+import { AdminReport } from "@/components/admin-report"
 
 interface Stats {
   totalTickets: number
   totalUsers: number
   byStatus: Array<{ status: string; count: number }>
   byCategory: Array<{ category: string; count: number }>
-  recentTickets: Array<any>
+  recentTickets: Array<{id: number
+    title: string
+    status: string
+    category: string
+    name: string
+    divisi: string | null
+    created_at: string
+  }>
 }
 
 export function AdminStats() {
@@ -250,6 +259,9 @@ export function AdminStats() {
         </Card>
       </div>
 
+{/* Export Report Section */}
+      <AdminReport />
+
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Status Chart */}
@@ -304,8 +316,12 @@ export function AdminStats() {
               <div key={ticket.id} className="flex items-center justify-between p-3 border rounded">
                 <div>
                   <p className="font-medium">{ticket.title}</p>
-                  <p className="text-sm text-muted-foreground">{ticket.name}</p>
-                </div>
+                  <p className="text-sm text-muted-foreground">{ticket.name}
+                    {ticket.divisi && (
+                      <Badge variant="outline" className="text-xs"> Divisi : {ticket.divisi} </Badge>
+                    )}
+                  </p>
+                </div> 
                 <div className="flex items-center gap-2">
                   {ticket.category && (
                     <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{ticket.category}</span>

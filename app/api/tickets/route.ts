@@ -117,6 +117,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { query } from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
+import { sendNotificationEmail } from "@/lib/email"
+
 
 const NLP_API_URL = process.env.NLP_API_URL || "http://localhost:8000"
 
@@ -138,14 +140,14 @@ export async function GET(request: NextRequest) {
     if (decoded.role === "admin") {
       // Admin sees all tickets
       tickets = await query(
-        `SELECT t.*, u.name, u.email FROM tickets t 
+        `SELECT t.*, u.name, u.email, u.divisi FROM tickets t 
          JOIN users u ON t.id_user = u.id 
          ORDER BY t.created_at DESC`
       )
     } else {
       // User sees only their tickets
       tickets = await query(
-        `SELECT t.*, u.name, u.email FROM tickets t 
+        `SELECT t.*, u.name, u.email, u.divisi FROM tickets t 
          JOIN users u ON t.id_user = u.id 
          WHERE t.id_user = ? 
          ORDER BY t.created_at DESC`,
@@ -221,14 +223,42 @@ export async function POST(request: NextRequest) {
       [decoded.userId, title, description, category, "new", imageUserUrl || null]
     )
 
-    return NextResponse.json(
-      { 
-        message: "Ticket created", 
-        ticketId: (result as any).insertId,
-        category 
-      }, 
-      { status: 201 }
-    )
+    // return NextResponse.json(
+    //   { 
+    //     message: "Ticket created", 
+    //     ticketId: (result as any).insertId,
+    //     category 
+    //   }, 
+    //   { status: 201 }
+    // )
+
+    const ticketId = (result as any).insertId
+
+    try {
+      // Get semua admin users
+      const admins = await query("SELECT id, name, email FROM users WHERE role = 'admin'")
+      const userInfo = await query("SELECT name, divisi FROM users WHERE id = ?", [decoded.userId])
+      const user = (userInfo as any)[0]
+
+      // Create notification untuk setiap admin dan send email
+      for (const admin of admins as any[]) {
+        // Insert notification ke database
+        await query(
+          "INSERT INTO notifications (id_admin, id_ticket, id_user, title, message, is_read) VALUES (?, ?, ?, ?, ?, ?)",
+          [admin.id, ticketId, decoded.userId, title, `Tiket baru dari ${user.name}`, false],
+        )
+
+        // Send email notification
+        await sendNotificationEmail(admin.email, admin.name, title, user.name, user.divisi, ticketId)
+      }
+
+      console.log("[v0] Notifications created and emails sent for ticket", ticketId)
+    } catch (notificationError) {
+      console.error("[v0] Error creating notifications:", notificationError)
+      // Continue even if notification fails
+    }
+
+    return NextResponse.json({ message: "Ticket created", ticketId }, { status: 201 })
   } catch (error) {
     console.error("Create ticket error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

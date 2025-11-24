@@ -17,6 +17,7 @@ interface Ticket {
   image_user_url?: string
   image_admin_url?: string
   admin_notes?: string
+  divisi?: string
 }
 
 interface TicketListProps {
@@ -90,7 +91,14 @@ export function TicketList({ refreshTrigger }: TicketListProps) {
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                <div className="flex gap-2 items-center mt-1">
                 <CardDescription>{ticket.name}</CardDescription>
+                {ticket.divisi && (
+                  <Badge variant="secondary" className="text-xs">
+                    {ticket.divisi}
+                  </Badge>
+                )}
+              </div>
               </div>
               <Badge className={getStatusColor(ticket.status)}>{ticket.status}</Badge>
             </div>
