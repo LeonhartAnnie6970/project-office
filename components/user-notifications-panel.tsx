@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Bell, X, CheckCheck, FileText, Image as ImageIcon, CheckCircle, Clock } from 'lucide-react'
+import { X, CheckCheck, FileText, Image as ImageIcon, CheckCircle, Clock } from 'lucide-react'
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 interface Notification {
@@ -21,10 +20,8 @@ interface UserNotificationsPanelProps {
 }
 
 export function UserNotificationsPanel({ token }: UserNotificationsPanelProps) {
-  const [isOpen, setIsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     fetchNotifications()
@@ -76,8 +73,8 @@ export function UserNotificationsPanel({ token }: UserNotificationsPanelProps) {
 
   const handleNotificationClick = (notification: Notification) => {
     handleMarkAsRead(notification.id)
-    setIsOpen(false)
-    // Optionally scroll to ticket or refresh ticket list
+    // Refresh ticket list if needed
+    window.location.reload()
   }
 
   const getNotificationIcon = (type: string) => {
@@ -91,7 +88,7 @@ export function UserNotificationsPanel({ token }: UserNotificationsPanelProps) {
       case 'ticket_resolved':
         return <CheckCircle className="w-4 h-4 text-green-600" />
       default:
-        return <Bell className="w-4 h-4" />
+        return <Clock className="w-4 h-4" />
     }
   }
 
@@ -111,84 +108,61 @@ export function UserNotificationsPanel({ token }: UserNotificationsPanelProps) {
   }
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative"
-      >
-        <Bell className="w-5 h-5" />
-        {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
-      </Button>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-4 border-b flex items-center justify-between flex-shrink: 0 bg-background">
+        <h3 className="font-semibold">Notifikasi ({unreadCount})</h3>
+        <div className="flex gap-2">
+          {unreadCount > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleMarkAllAsRead}
+              className="text-xs"
+            >
+              <CheckCheck className="w-4 h-4 mr-1" />
+              Tandai Semua
+            </Button>
+          )}
+        </div>
+      </div>
 
-      {isOpen && (
-        <Card className="absolute right-0 top-12 w-96 max-h-96 overflow-y-auto shadow-lg z-50">
-          <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-background">
-            <h3 className="font-semibold">Notifikasi ({unreadCount})</h3>
-            <div className="flex gap-2">
-              {unreadCount > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleMarkAllAsRead}
-                  className="text-xs"
-                >
-                  <CheckCheck className="w-4 h-4 mr-1" />
-                  Tandai Semua
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setIsOpen(false)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+      {/* Notifications List */}
+      <div className="flex-1 overflow-y-auto divide-y">
+        {notifications.length === 0 ? (
+          <div className="p-4 text-center text-muted-foreground">
+            Tidak ada notifikasi
           </div>
-
-          <div className="divide-y">
-            {notifications.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">
-                Tidak ada notifikasi
-              </div>
-            ) : (
-              notifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  onClick={() => handleNotificationClick(notif)}
-                  className={`p-3 hover:bg-accent cursor-pointer transition ${
-                    !notif.is_read ? getNotificationColor(notif.type) : ''
-                  }`}
-                >
-                  <div className="flex gap-3">
-                    <div className="shrink-0 mt-1">
-                      {getNotificationIcon(notif.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm line-clamp-1">{notif.ticket_title}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{notif.message}</p>
-                      <div className="flex items-center justify-between mt-2">
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(notif.created_at).toLocaleString("id-ID")}
-                        </p>
-                        {!notif.is_read && (
-                          <Badge variant="secondary" className="text-xs">Baru</Badge>
-                        )}
-                      </div>
-                    </div>
+        ) : (
+          notifications.map((notif) => (
+            <div
+              key={notif.id}
+              onClick={() => handleNotificationClick(notif)}
+              className={`p-3 hover:bg-accent cursor-pointer transition ${
+                !notif.is_read ? getNotificationColor(notif.type) : ''
+              }`}
+            >
+              <div className="flex gap-3">
+                <div className="flex-shrink: 0 mt-1">
+                  {getNotificationIcon(notif.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm line-clamp-1">{notif.ticket_title}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{notif.message}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(notif.created_at).toLocaleString("id-ID")}
+                    </p>
+                    {!notif.is_read && (
+                      <Badge variant="secondary" className="text-xs">Baru</Badge>
+                    )}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        </Card>
-      )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }
