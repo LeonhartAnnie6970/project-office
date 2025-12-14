@@ -5,7 +5,6 @@ import {
   LayoutDashboard, 
   Ticket, 
   BarChart3, 
-  Settings, 
   LogOut, 
   ChevronLeft, 
   ChevronRight,
@@ -15,7 +14,6 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
 
 interface SidebarProps {
   role: "admin" | "user"
@@ -23,6 +21,7 @@ interface SidebarProps {
   onTabChange: (tab: string) => void
   onLogout: () => void
   onOpenProfile: () => void
+  onOpenNotifications: () => void
   notificationCount?: number
 }
 
@@ -32,10 +31,10 @@ export function Sidebar({
   onTabChange,
   onLogout,
   onOpenProfile,
+  onOpenNotifications,
   notificationCount = 0
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
-  const router = useRouter()
 
   const adminMenuItems = [
     { id: "analytics", label: "Analytics", icon: BarChart3 },
@@ -52,12 +51,12 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen transition-all duration-300 border-r bg-background",
+        "fixed left-0 top-0 z-40 h-screen transition-all duration-300 border-r bg-background flex flex-col",
         collapsed ? "w-16" : "w-64"
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between h-16 px-4 border-b">
+      <div className="flex items-center justify-between h-16 px-4 border-b flex-shrink: 0">
         {!collapsed && (
           <h2 className="text-lg font-bold">
             {role === "admin" ? "Admin Panel" : "User Dashboard"}
@@ -67,7 +66,7 @@ export function Sidebar({
           variant="ghost"
           size="icon"
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto"
+          className={cn("", collapsed ? "" : "ml-auto")}
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -77,7 +76,7 @@ export function Sidebar({
         </Button>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon
@@ -100,8 +99,11 @@ export function Sidebar({
         })}
       </nav>
 
+      {/* Divider */}
+      <div className="border-t" />
+
       {/* Footer Actions */}
-      <div className="border-t p-4 space-y-2">
+      <div className="p-4 space-y-2 flex-shrink: 0">
         {/* Notifications */}
         <Button
           variant="ghost"
@@ -109,14 +111,19 @@ export function Sidebar({
             "w-full justify-start relative",
             collapsed && "justify-center px-2"
           )}
-          onClick={() => {
-            // Notification panel will be handled by parent
-          }}
+          onClick={onOpenNotifications}
         >
-          <Bell className={cn("w-5 h-5", !collapsed && "mr-3")} />
+          <div className="relative">
+            <Bell className={cn("w-5 h-5", !collapsed && "mr-3")} />
+            {notificationCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                {notificationCount > 9 ? "9" : notificationCount}
+              </span>
+            )}
+          </div>
           {!collapsed && <span>Notifikasi</span>}
-          {notificationCount > 0 && (
-            <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+          {!collapsed && notificationCount > 0 && (
+            <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
               {notificationCount > 9 ? "9+" : notificationCount}
             </span>
           )}

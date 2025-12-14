@@ -88,7 +88,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { UserProfileModal } from "@/components/user-profile-modal"
 import { UserNotificationsPanel } from "@/components/user-notifications-panel"
 import { Button } from "@/components/ui/button"
-import { User, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 function DashboardContent() {
@@ -96,6 +96,7 @@ function DashboardContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [token, setToken] = useState("")
   const [activeTab, setActiveTab] = useState("dashboard")
   const [notificationCount, setNotificationCount] = useState(0)
@@ -117,7 +118,22 @@ function DashboardContent() {
 
     setToken(token)
     setIsAuthenticated(true)
+
+    // Fetch notification count
+    fetchNotificationCount(token)
   }, [router])
+
+  const fetchNotificationCount = async (token: string) => {
+    try {
+      const response = await fetch("/api/user/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      setNotificationCount(data.unreadCount || 0)
+    } catch (error) {
+      console.error("Error fetching notification count:", error)
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("token")
@@ -129,6 +145,10 @@ function DashboardContent() {
   const handleTicketSuccess = () => {
     setRefreshTrigger((prev) => prev + 1)
     setShowNewTicketForm(false)
+  }
+
+  const handleOpenNotifications = () => {
+    setShowNotifications(!showNotifications)
   }
 
   if (!isAuthenticated) {
@@ -144,12 +164,13 @@ function DashboardContent() {
         onTabChange={setActiveTab}
         onLogout={handleLogout}
         onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenNotifications={handleOpenNotifications}
         notificationCount={notificationCount}
       />
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto ml-64 transition-all duration-300">
-        {/* Top Bar */}
+        {/* Top Bar - Minimal Header */}
         <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
           <div className="flex items-center justify-between px-6 py-4">
             <div>
@@ -163,22 +184,12 @@ function DashboardContent() {
               </p>
             </div>
             
-            <div className="flex items-center gap-2">
-              {activeTab === "my-tickets" && (
-                <Button onClick={() => setShowNewTicketForm(!showNewTicketForm)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Buat Tiket Baru
-                </Button>
-              )}
-              <UserNotificationsPanel token={token} />
-              <Button
-                onClick={() => setIsProfileOpen(true)}
-                variant="outline"
-                size="icon"
-              >
-                <User className="w-4 h-4" />
+            {activeTab === "my-tickets" && (
+              <Button onClick={() => setShowNewTicketForm(!showNewTicketForm)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Buat Tiket Baru
               </Button>
-            </div>
+            )}
           </div>
         </header>
 
@@ -199,7 +210,10 @@ function DashboardContent() {
                     <Button 
                       className="h-24" 
                       variant="outline"
-                      onClick={() => setActiveTab("my-tickets")}
+                      onClick={() => {
+                        setActiveTab("my-tickets")
+                        setShowNewTicketForm(true)
+                      }}
                     >
                       <div className="text-center">
                         <Plus className="w-6 h-6 mx-auto mb-2" />
@@ -213,7 +227,9 @@ function DashboardContent() {
                       onClick={() => setActiveTab("my-tickets")}
                     >
                       <div className="text-center">
-                        <User className="w-6 h-6 mx-auto mb-2" />
+                        <svg className="w-6 h-6 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                         <p className="font-medium">Lihat Tiket Saya</p>
                         <p className="text-xs text-muted-foreground">Monitor status ticket</p>
                       </div>
@@ -275,6 +291,18 @@ function DashboardContent() {
           )}
         </div>
       </main>
+
+      {/* Notification Panel - Positioned from sidebar */}
+      {showNotifications && (
+        <div className="fixed inset-0 bg-black/20 z-50" onClick={() => setShowNotifications(false)}>
+          <div 
+            className="fixed left-64 top-16 w-96 max-h-[calc(100vh-80px)] bg-background border rounded-lg shadow-lg overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <UserNotificationsPanel token={token} />
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <UserProfileModal

@@ -8,8 +8,6 @@ import { AdminTickets } from "@/components/admin-tickets"
 import { ThemeProvider } from "@/components/theme-provider"
 import { UserProfileModal } from "@/components/user-profile-modal"
 import { AdminNotificationsPanel } from "@/components/admin-notifications-panel"
-import { Bell, User } from 'lucide-react'
-import { Button } from "@/components/ui/button"
 
 function AdminDashboardContent() {
   const router = useRouter()
@@ -40,7 +38,22 @@ function AdminDashboardContent() {
       setActiveTab("tickets")
       setSelectedTicketId(parseInt(ticketId))
     }
+
+    // Fetch notification count
+    fetchNotificationCount(token)
   }, [router, searchParams])
+
+  const fetchNotificationCount = async (token: string) => {
+    try {
+      const response = await fetch("/api/admin/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      setNotificationCount(data.unreadCount || 0)
+    } catch (error) {
+      console.error("Error fetching notification count:", error)
+    }
+  }
 
   const handleTicketClick = (ticketId?: number | string | null) => {
     if (ticketId === undefined || ticketId === null || ticketId === "") {
@@ -56,6 +69,7 @@ function AdminDashboardContent() {
 
     setActiveTab("tickets")
     setSelectedTicketId(idNum)
+    setShowNotifications(false)
 
     const url = new URL(window.location.href)
     url.searchParams.set('ticketId', String(idNum))
@@ -67,6 +81,10 @@ function AdminDashboardContent() {
     localStorage.removeItem("userId")
     localStorage.removeItem("role")
     router.push("/login")
+  }
+
+  const handleOpenNotifications = () => {
+    setShowNotifications(!showNotifications)
   }
 
   if (!isAuthenticated) {
@@ -82,14 +100,15 @@ function AdminDashboardContent() {
         onTabChange={setActiveTab}
         onLogout={handleLogout}
         onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenNotifications={handleOpenNotifications}
         notificationCount={notificationCount}
       />
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto ml-64 transition-all duration-300">
-        {/* Top Bar */}
+        {/* Top Bar - Minimal Header */}
         <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-          <div className="flex items-center justify-between px-6 py-4">
+          <div className="px-6 py-4">
             <div>
               <h1 className="text-2xl font-bold">
                 {activeTab === "analytics" ? "Analytics Dashboard" : "Kelola Tiket"}
@@ -100,20 +119,6 @@ function AdminDashboardContent() {
                   : "Kelola dan proses ticket dari user"}
               </p>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <AdminNotificationsPanel 
-                token={token} 
-                onTicketClick={handleTicketClick}
-              />
-              <Button
-                onClick={() => setIsProfileOpen(true)}
-                variant="outline"
-                size="icon"
-              >
-                <User className="w-4 h-4" />
-              </Button>
-            </div>
           </div>
         </header>
 
@@ -123,6 +128,24 @@ function AdminDashboardContent() {
           {activeTab === "tickets" && <AdminTickets selectedTicketId={selectedTicketId} />}
         </div>
       </main>
+
+      {/* Notification Panel - Positioned from sidebar */}
+      {showNotifications && (
+        <div className="fixed inset-0 bg-black/20 z-50" onClick={() => setShowNotifications(false)}>
+          <div 
+            className="fixed left-64 top-16 w-96 max-h-[calc(100vh-80px)] bg-background border rounded-lg shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AdminNotificationsPanel 
+              token={token} 
+              onTicketClick={(ticketId) => {
+                handleTicketClick(ticketId)
+                setShowNotifications(false)
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <UserProfileModal
