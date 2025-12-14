@@ -1,24 +1,27 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from 'next/navigation'  // ← Ada useSearchParams
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Sidebar } from "@/components/sidebar"
 import { AdminStats } from "@/components/admin-stats"
 import { AdminTickets } from "@/components/admin-tickets"
 import { ThemeProvider } from "@/components/theme-provider"
 import { UserProfileModal } from "@/components/user-profile-modal"
 import { AdminNotificationsPanel } from "@/components/admin-notifications-panel"
-import { User } from 'lucide-react'
+import { Bell, User } from 'lucide-react'
+import { Button } from "@/components/ui/button"
 
 function AdminDashboardContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()  // ← NEW
+  const searchParams = useSearchParams()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [token, setToken] = useState("")
-  const [activeTab, setActiveTab] = useState("analytics")  // ← NEW
-  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null)  // ← NEW
+  const [activeTab, setActiveTab] = useState("analytics")
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [notificationCount, setNotificationCount] = useState(0)
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -32,17 +35,14 @@ function AdminDashboardContent() {
     setToken(token)
     setIsAuthenticated(true)
 
-    // ← NEW SECTION
     const ticketId = searchParams.get('ticketId')
     if (ticketId) {
       setActiveTab("tickets")
       setSelectedTicketId(parseInt(ticketId))
     }
-  }, [router, searchParams])  // ← searchParams added
+  }, [router, searchParams])
 
-  // ← NEW FUNCTION
   const handleTicketClick = (ticketId?: number | string | null) => {
-    // defensive: ensure ticketId exists before using it
     if (ticketId === undefined || ticketId === null || ticketId === "") {
       console.warn("handleTicketClick called without a ticketId", ticketId)
       return
@@ -62,55 +62,75 @@ function AdminDashboardContent() {
     window.history.pushState({}, '', url)
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("userId")
+    localStorage.removeItem("role")
+    router.push("/login")
+  }
+
   if (!isAuthenticated) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <AdminNotificationsPanel 
-              token={token} 
-              onTicketClick={handleTicketClick}  
-            />
-            <Button
-              onClick={() => setIsProfileOpen(true)}
-              variant="outline"
-              className="gap-2"
-            >
-              <User className="w-4 h-4" />
-              Profil
-            </Button>
+    <div className="flex h-screen bg-background">
+      {/* Sidebar */}
+      <Sidebar
+        role="admin"
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        notificationCount={notificationCount}
+      />
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto ml-64 transition-all duration-300">
+        {/* Top Bar */}
+        <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div>
+              <h1 className="text-2xl font-bold">
+                {activeTab === "analytics" ? "Analytics Dashboard" : "Kelola Tiket"}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {activeTab === "analytics" 
+                  ? "Monitor performa dan statistik sistem" 
+                  : "Kelola dan proses ticket dari user"}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <AdminNotificationsPanel 
+                token={token} 
+                onTicketClick={handleTicketClick}
+              />
+              <Button
+                onClick={() => setIsProfileOpen(true)}
+                variant="outline"
+                size="icon"
+              >
+                <User className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
+        </header>
+
+        {/* Content Area */}
+        <div className="p-6 space-y-6">
+          {activeTab === "analytics" && <AdminStats />}
+          {activeTab === "tickets" && <AdminTickets selectedTicketId={selectedTicketId} />}
         </div>
-      </header>
+      </main>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">  {/* ← CHANGED */}
-          <TabsList>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="tickets">Kelola Tiket</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="analytics" className="space-y-4">
-            <AdminStats />
-          </TabsContent>
-
-          <TabsContent value="tickets" className="space-y-4">
-            <AdminTickets selectedTicketId={selectedTicketId} />  {/* ← NEW PROP */}
-          </TabsContent>
-        </Tabs>
-      </div>
-
+      {/* Modals */}
       <UserProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
         token={token}
       />
-    </main>
+    </div>
   )
 }
 
