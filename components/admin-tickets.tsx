@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Upload, X, ImageIcon, Calendar, Pencil, Trash2, AlertCircle, Search, Filter } from "lucide-react"
+import { Upload, X, ImageIcon, Calendar, Pencil, Trash2, AlertCircle, Search, Filter, Hash } from "lucide-react"
 import Image from "next/image"
 
 interface Ticket {
@@ -312,202 +312,212 @@ export function AdminTickets({ selectedTicketId }: AdminTicketsProps) {
     }
   }
 
-  const renderTicketCard = (ticket: Ticket) => (
-    <div 
-      key={ticket.id} 
-      ref={(el) => { ticketRefs.current[ticket.id] = el }}
-      className="border rounded-lg p-4 space-y-3 bg-card transition-all duration-300"
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <h3 className="font-semibold">{ticket.title}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-sm text-muted-foreground">{ticket.name}</p>
-            {ticket.divisi && (
-              <Badge variant="secondary" className="text-xs">{ticket.divisi}</Badge>
-            )}
-          </div>
-        </div>
+ const renderTicketCard = (ticket: Ticket) => (
+  <div 
+    key={ticket.id} 
+    ref={(el) => { ticketRefs.current[ticket.id] = el }}
+    className="border rounded-lg p-4 space-y-3 bg-card transition-all duration-300"
+  >
+    {/* Ticket ID and Category Header */}
+    <div className="flex items-center justify-between pb-3 border-b">
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="font-mono text-xs">
+          <Hash className="w-3 h-3 mr-1" />
+          Ticket #{ticket.id}
+        </Badge>
         <Badge variant="outline">{ticket.category || "Uncategorized"}</Badge>
       </div>
+      <p className="text-xs text-muted-foreground">
+        {new Date(ticket.created_at).toLocaleString("id-ID")}
+      </p>
+    </div>
 
-      <div>
-        <p className="text-xs font-medium text-muted-foreground mb-1">Deskripsi User:</p>
-        <p className="text-sm">{ticket.description}</p>
-      </div>
-
-      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-muted-foreground">Catatan Admin:</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openNotesEditor(ticket.id, ticket.admin_notes)}
-          >
-            <Pencil className="h-3 w-3 mr-1" />
-            {ticket.admin_notes ? "Edit" : "Tambah"}
-          </Button>
+    <div className="flex items-start justify-between">
+      <div className="flex-1">
+        <h3 className="font-semibold">{ticket.title}</h3>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="text-sm text-muted-foreground">{ticket.name}</p>
+          {ticket.divisi && (
+            <Badge variant="secondary" className="text-xs">{ticket.divisi}</Badge>
+          )}
         </div>
-        {ticket.admin_notes ? (
-          <p className="text-sm whitespace-pre-wrap">{ticket.admin_notes}</p>
+      </div>
+    </div>
+
+    <div>
+      <p className="text-xs font-medium text-muted-foreground mb-1">Deskripsi User:</p>
+      <p className="text-sm">{ticket.description}</p>
+    </div>
+
+    <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground">Catatan Admin:</p>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => openNotesEditor(ticket.id, ticket.admin_notes)}
+        >
+          <Pencil className="h-3 w-3 mr-1" />
+          {ticket.admin_notes ? "Edit" : "Tambah"}
+        </Button>
+      </div>
+      {ticket.admin_notes ? (
+        <p className="text-sm whitespace-pre-wrap">{ticket.admin_notes}</p>
+      ) : (
+        <p className="text-sm text-muted-foreground italic">Belum ada catatan admin</p>
+      )}
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">Gambar dari User:</p>
+        {ticket.image_user_url ? (
+          <div
+            className="relative aspect-video border rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => openImageModal(ticket.image_user_url!, ticket.title, "user", ticket.name)}
+          >
+            <Image
+              src={ticket.image_user_url}
+              alt="User report"
+              fill
+              className="object-cover"
+            />
+          </div>
         ) : (
-          <p className="text-sm text-muted-foreground italic">Belum ada catatan admin</p>
+          <div className="aspect-video border rounded-lg flex items-center justify-center bg-muted">
+            <div className="text-center">
+              <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-xs text-muted-foreground">Tidak ada gambar</p>
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Gambar dari User:</p>
-          {ticket.image_user_url ? (
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">Gambar Resolusi Admin:</p>
+        {ticket.image_admin_url ? (
+          <div className="space-y-2">
             <div
-              className="relative aspect-video border rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => openImageModal(ticket.image_user_url!, ticket.title, "user", ticket.name)}
+              className="relative aspect-video border rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity group"
+              onClick={() => openImageModal(
+                ticket.image_admin_url!,
+                ticket.title,
+                "admin",
+                ticket.name,
+                ticket.image_admin_uploaded_at
+              )}
             >
               <Image
-                src={ticket.image_user_url}
-                alt="User report"
+                src={ticket.image_admin_url}
+                alt="Admin resolution"
                 fill
                 className="object-cover"
               />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
             </div>
-          ) : (
+            <div className="flex items-center justify-between">
+              {ticket.image_admin_uploaded_at && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  <span>
+                    {new Date(ticket.image_admin_uploaded_at).toLocaleString("id-ID")}
+                  </span>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <label htmlFor={`reupload-${ticket.id}`}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingImage[ticket.id]}
+                    onClick={() => document.getElementById(`reupload-${ticket.id}`)?.click()}
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Ganti
+                  </Button>
+                </label>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDeleteAdminImage(ticket.id)}
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Hapus
+                </Button>
+              </div>
+            </div>
+            <input
+              id={`reupload-${ticket.id}`}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleFileSelect(ticket.id, e)}
+              disabled={uploadingImage[ticket.id]}
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
             <div className="aspect-video border rounded-lg flex items-center justify-center bg-muted">
               <div className="text-center">
                 <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-xs text-muted-foreground">Tidak ada gambar</p>
+                <p className="text-xs text-muted-foreground">Belum ada gambar</p>
               </div>
             </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Gambar Resolusi Admin:</p>
-          {ticket.image_admin_url ? (
-            <div className="space-y-2">
-              <div
-                className="relative aspect-video border rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity group"
-                onClick={() => openImageModal(
-                  ticket.image_admin_url!,
-                  ticket.title,
-                  "admin",
-                  ticket.name,
-                  ticket.image_admin_uploaded_at
-                )}
+            <label htmlFor={`upload-${ticket.id}`}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                disabled={uploadingImage[ticket.id]}
+                onClick={() => document.getElementById(`upload-${ticket.id}`)?.click()}
               >
-                <Image
-                  src={ticket.image_admin_url}
-                  alt="Admin resolution"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-              </div>
-              <div className="flex items-center justify-between">
-                {ticket.image_admin_uploaded_at && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span>
-                      {new Date(ticket.image_admin_uploaded_at).toLocaleString("id-ID")}
-                    </span>
-                  </div>
+                {uploadingImage[ticket.id] ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Mengunggah...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Unggah Gambar Resolusi
+                  </>
                 )}
-                <div className="flex gap-2">
-                  <label htmlFor={`reupload-${ticket.id}`}>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={uploadingImage[ticket.id]}
-                      onClick={() => document.getElementById(`reupload-${ticket.id}`)?.click()}
-                    >
-                      <Upload className="h-3 w-3 mr-1" />
-                      Ganti
-                    </Button>
-                  </label>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteAdminImage(ticket.id)}
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Hapus
-                  </Button>
-                </div>
-              </div>
+              </Button>
               <input
-                id={`reupload-${ticket.id}`}
+                id={`upload-${ticket.id}`}
                 type="file"
                 accept="image/*"
                 className="hidden"
                 onChange={(e) => handleFileSelect(ticket.id, e)}
                 disabled={uploadingImage[ticket.id]}
               />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="aspect-video border rounded-lg flex items-center justify-center bg-muted">
-                <div className="text-center">
-                  <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-xs text-muted-foreground">Belum ada gambar</p>
-                </div>
-              </div>
-              <label htmlFor={`upload-${ticket.id}`}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  disabled={uploadingImage[ticket.id]}
-                  onClick={() => document.getElementById(`upload-${ticket.id}`)?.click()}
-                >
-                  {uploadingImage[ticket.id] ? (
-                    <>
-                      <span className="animate-spin mr-2">⏳</span>
-                      Mengunggah...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Unggah Gambar Resolusi
-                    </>
-                  )}
-                </Button>
-                <input
-                  id={`upload-${ticket.id}`}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleFileSelect(ticket.id, e)}
-                  disabled={uploadingImage[ticket.id]}
-                />
-              </label>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between pt-2 border-t">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Status:</span>
-          <Select value={ticket.status} onValueChange={(value) => handleStatusUpdate(ticket.id, value)}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="resolved">Resolved</SelectItem>
-            </SelectContent>
-          </Select>
-          {updatingStatus[ticket.id] && <span className="text-xs text-muted-foreground">Updating...</span>}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {new Date(ticket.created_at).toLocaleString("id-ID")}
-        </p>
+            </label>
+          </div>
+        )}
       </div>
     </div>
-  )
+
+    <div className="flex items-center justify-between pt-2 border-t">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">Status:</span>
+        <Select value={ticket.status} onValueChange={(value) => handleStatusUpdate(ticket.id, value)}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="new">New</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
+          </SelectContent>
+        </Select>
+        {updatingStatus[ticket.id] && <span className="text-xs text-muted-foreground">Updating...</span>}
+      </div>
+    </div>
+  </div>
+)
 
   if (isLoading) {
     return <div className="text-center py-8">Loading...</div>

@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { X, Upload, Eye, EyeOff, LogOut } from 'lucide-react'
+import { X, Upload, Eye, EyeOff, LogOut, Save, Edit2 } from 'lucide-react'
+import { DIVISIONS } from "@/lib/divisions"
 
 interface UserProfile {
   id: number
@@ -32,7 +34,8 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
   const [success, setSuccess] = useState("")
 
   const [username, setUsername] = useState("")
-  const [isEditingUsername, setIsEditingUsername] = useState(false)
+  const [divisi, setDivisi] = useState("")
+  const [isEditing, setIsEditing] = useState(false)
 
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
@@ -61,6 +64,7 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
       const data = await response.json()
       setProfile(data)
       setUsername(data.username)
+      setDivisi(data.divisi)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan")
     } finally {
@@ -74,6 +78,9 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
 
     try {
       setLoading(true)
+      setError("")
+      setSuccess("")
+
       const formData = new FormData()
       formData.append("file", file)
 
@@ -85,11 +92,16 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
         body: formData,
       })
 
-      if (!response.ok) throw new Error("Gagal upload gambar")
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Gagal upload gambar")
+      }
 
       const data = await response.json()
       setProfile((prev) => (prev ? { ...prev, profile_image_url: data.url } : null))
       setSuccess("Foto profil berhasil diupdate")
+      
+      setTimeout(() => setSuccess(""), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal upload gambar")
     } finally {
@@ -97,30 +109,42 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
     }
   }
 
-  const handleUpdateUsername = async () => {
+  const handleUpdateProfile = async () => {
     if (username.length < 3) {
       setError("Username harus minimal 3 karakter")
       return
     }
 
+    if (!divisi) {
+      setError("Divisi harus dipilih")
+      return
+    }
+
     try {
       setLoading(true)
+      setError("")
+      setSuccess("")
+
       const response = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username, divisi }),
       })
 
-      if (!response.ok) throw new Error("Gagal update profil")
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Gagal update profil")
+      }
 
       const data = await response.json()
       setProfile(data)
-      setIsEditingUsername(false)
-      setSuccess("Username berhasil diupdate")
-      setError("")
+      setIsEditing(false)
+      setSuccess("Profil berhasil diupdate")
+      
+      setTimeout(() => setSuccess(""), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal update profil")
     } finally {
@@ -146,6 +170,9 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
 
     try {
       setLoading(true)
+      setError("")
+      setSuccess("")
+
       const response = await fetch("/api/user/change-password", {
         method: "POST",
         headers: {
@@ -155,13 +182,17 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
         body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
       })
 
-      if (!response.ok) throw new Error("Gagal mengubah password")
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Gagal mengubah password")
+      }
 
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
       setSuccess("Password berhasil diubah")
-      setError("")
+      
+      setTimeout(() => setSuccess(""), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal mengubah password")
     } finally {
@@ -175,6 +206,15 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
     localStorage.removeItem("role")
     onClose()
     router.push("/login")
+  }
+
+  const handleCancelEdit = () => {
+    if (profile) {
+      setUsername(profile.username)
+      setDivisi(profile.divisi)
+    }
+    setIsEditing(false)
+    setError("")
   }
 
   if (!isOpen) return null
@@ -220,16 +260,16 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
                   <div className="relative w-32 h-32">
                     {profile.profile_image_url ? (
                       <img
-                        src={profile.profile_image_url || "/placeholder.svg"}
+                        src={profile.profile_image_url}
                         alt="Profile"
                         className="w-full h-full rounded-full object-cover border-4 border-gray-200"
                       />
                     ) : (
-                      <div className="w-full h-full rounded-full bg-gray-300 flex items-center justify-center text-gray-600">
-                        No Image
+                      <div className="w-full h-full rounded-full bg-linier-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-4xl font-bold">
+                        {profile.username.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <label className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 cursor-pointer hover:bg-blue-600 transition">
+                    <label className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 cursor-pointer hover:bg-blue-600 transition shadow-lg">
                       <Upload className="w-4 h-4 text-white" />
                       <input
                         type="file"
@@ -240,48 +280,47 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
                       />
                     </label>
                   </div>
+                  <p className="text-xs text-muted-foreground">Klik ikon upload untuk mengubah foto profil</p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
                     <Label className="text-sm font-medium">Nama Pengguna</Label>
-                    {isEditingUsername ? (
-                      <div className="flex gap-2 mt-1">
-                        <Input
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          disabled={loading}
-                        />
-                        <Button
-                          size="sm"
-                          onClick={handleUpdateUsername}
-                          disabled={loading}
-                        >
-                          Simpan
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setIsEditingUsername(false)
-                            setUsername(profile.username)
-                          }}
-                          disabled={loading}
-                        >
-                          Batal
-                        </Button>
-                      </div>
+                    {isEditing ? (
+                      <Input
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        disabled={loading}
+                        className="mt-1"
+                        placeholder="Masukkan nama pengguna"
+                      />
                     ) : (
-                      <div className="flex items-center justify-between mt-1 p-2 bg-gray-100 rounded">
-                        <span>{profile.username}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setIsEditingUsername(true)}
-                          disabled={loading}
-                        >
-                          Edit
-                        </Button>
+                      <div className="mt-1 p-2 bg-gray-100 rounded">
+                        {profile.username}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Divisi</Label>
+                    {isEditing ? (
+                      <Select value={divisi} onValueChange={setDivisi} disabled={loading}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Pilih divisi" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DIVISIONS.map((div) => (
+                            <SelectItem key={div} value={div}>
+                              {div}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="mt-1 p-2 bg-gray-100 rounded">
+                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                          {profile.divisi}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -294,19 +333,46 @@ export function UserProfileModal({ isOpen, onClose, token }: UserProfileModalPro
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium">Divisi</Label>
-                    <div className="p-2 bg-gray-100 rounded mt-1">
-                      <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                        {profile.divisi}
-                      </span>
+                    <Label className="text-sm font-medium">Bergabung Sejak</Label>
+                    <div className="p-2 bg-gray-100 rounded mt-1 text-gray-600">
+                      {new Date(profile.created_at).toLocaleDateString("id-ID", {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
                     </div>
                   </div>
 
-                  <div>
-                    <Label className="text-sm font-medium">Bergabung Sejak</Label>
-                    <div className="p-2 bg-gray-100 rounded mt-1 text-gray-600">
-                      {new Date(profile.created_at).toLocaleDateString("id-ID")}
-                    </div>
+                  <div className="flex gap-2 pt-4">
+                    {isEditing ? (
+                      <>
+                        <Button
+                          onClick={handleUpdateProfile}
+                          disabled={loading}
+                          className="flex-1"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          {loading ? "Menyimpan..." : "Simpan Perubahan"}
+                        </Button>
+                        <Button
+                          onClick={handleCancelEdit}
+                          disabled={loading}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          Batal
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        onClick={() => setIsEditing(true)}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Edit Profil
+                      </Button>
+                    )}
                   </div>
                 </div>
               </TabsContent>
