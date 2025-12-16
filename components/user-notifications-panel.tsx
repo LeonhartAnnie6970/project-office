@@ -106,7 +106,6 @@ export function UserNotificationsPanel({ token }: UserNotificationsPanelProps) {
         return ''
     }
   }
-
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
